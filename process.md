@@ -1,6 +1,6 @@
 # 开发复盘报告（Deliverable C）— Process Documentation
 
-本项目严格遵循 **Spec-Driven Development（规格驱动开发）**：先将业务需求转成可验证的技术规格（`spec.md`），再用 AI 编码工具按规格生成/修改代码。任何偏差优先通过 **修改规格与提示词契约** 来纠偏。
+本项目严格遵循 **Spec-Driven Development（规格驱动开发）**：先将业务需求转成可验证的技术规格[`spec.md`](spec.md)，再用 AI 编码工具按规格生成/修改代码。任何偏差优先通过 **修改规格与提示词契约** 来纠偏。
 
 ---
 
@@ -13,7 +13,7 @@
 ### 1.2 应用内大模型接入（LLM Provider/Model）
 - Provider：阿里云百炼（Aliyun Bailian）
 - Model：由环境变量 `BAILIAN_MODEL` 配置（本地调试示例：`qwen3-max`）
-- Key 管理：使用 `.env.local`（不提交到仓库），仓库仅提供 `.env.example`
+- Key 管理：使用 `.env.local`（不提交到仓库），仓库仅提供 [`.env.example`](.env.example)
 
 ### 1.3 关键技术栈
 - Next.js 14+（App Router）+ TypeScript
@@ -28,12 +28,12 @@
 ### 2.1 总体流程（体现“架构师”视角）
 1. **需求抽象**：从需求文档提炼 MVP 的端到端链路：  
    输入（topic + 语言）→ 生成（3 scripts + trends）→ 卡片化展示 → Loading / Error+Retry → 一键复制。
-2. **规格化与可验收化**：在 `spec.md` 中定义：
+2. **规格化与可验收化**：在 [`spec.md`](spec.md) 中定义：
    - User Stories + Acceptance Criteria（每条都可测试）
    - Data Models（`GenerateRequest / InsightResponse`）与严格字段约束
    - API Interface（成功/失败返回结构）
    - UI 组件层级与状态机（Idle/Loading/Success/Error）
-3. **主提示词驱动生成**：以 `spec.md` 作为唯一真源（source of truth），用 Codex 生成：
+3. **主提示词驱动生成**：以 [`spec.md`](spec.md) 作为唯一真源（source of truth），用 Codex 生成：
    - Next.js App Router 项目骨架
    - `app/api/generate` 服务端接口（百炼调用 + zod 校验 + 一次 format-fix retry）
    - UI 组件（TopicForm / TrendCard / ScriptCard / Loading / Error / Copy + toast）
@@ -42,7 +42,7 @@
    - 返回是否严格符合 schema（字段、数量、类型）
    - UI 是否具备 Loading / Error+Retry / Copy feedback
 5. **先修规格/契约，再最小化补丁**：当出现模型输出不稳定导致 schema mismatch 时：
-   - 先在 `spec.md` 里把“允许/禁止的结构”写成硬约束（可验证）
+   - 先在 [`spec.md`](spec.md) 里把“允许/禁止的结构”写成硬约束（可验证）
    - 再让 Codex 根据更新后的 spec 对提示词/校验逻辑做最小范围修复
 6. **回归验证**：使用多组 topic（中/英、长短不同）重复测试，确认稳定性提升且未引入超规格功能。
 
@@ -65,7 +65,7 @@
 - **Root cause（根因）**
   - 对“script 允许字段集合”的约束在早期不够硬，模型会“自作主张”扩展字段或改变类型。
 - **Spec change（规格修正）**
-  - 在 `spec.md` 明确：每个 script **只能**包含 `id, style, hook, narrative, cta`。
+  - 在 [`spec.md`](spec.md) 明确：每个 script **只能**包含 `id, style, hook, narrative, cta`。
   - 明确：`style` 必须是 **string**（禁止 `styles[]`），`trends` 必须 **仅出现在顶层**。
   - 增强“拒绝未知字段”的 runtime rule（strict parsing）。
 - **Result（结果）**
@@ -81,7 +81,7 @@
 - **Root cause（根因）**
   - “UUID”对模型是软概念；若不强调 **hex-only**，模型会生成“看起来像 UUID”的字符串。
 - **Spec change（规格修正）**
-  - 在 `spec.md` 将 id 约束写成硬规则：仅允许 **0–9 / a–f + hyphens**（RFC4122-like）。
+  - 在 [`spec.md`](spec.md) 将 id 约束写成硬规则：仅允许 **0–9 / a–f + hyphens**（RFC4122-like）。
   - 在 prompt contract 明确要求：UUID 必须 hex-only，否则视为无效输出。
 - **Result（结果）**
   - 非法 UUID 的出现频率明显降低；当仍出现时，服务端能以可解释错误稳定失败并便于继续收敛提示词。

@@ -159,3 +159,220 @@ export interface InsightResponse {
   provider: { name: "aliyun-bailian"; model: string };
   created_at: string; // ISO timestamp
 }
+
+
+```
+
+---
+
+## 6) API Interface (Backend) — MUST
+
+> Goal: Provide a single stable API for the UI to request insights. The API must validate input, call Bailian on server-side, validate output via runtime schema, then return either `InsightResponse` or a structured error object.
+
+### 6.1 Endpoint
+- **POST** `/api/generate`
+- Content-Type: `application/json`
+- Request body: `GenerateRequest`
+- Response:
+  - `200`: `InsightResponse`
+  - `400`: invalid request / validation failure
+  - `429`: rate limited (optional)
+  - `500`: provider/network/internal errors
+  - `502`: `MODEL_OUTPUT_INVALID` (model output cannot be repaired within the one-retry rule)
+
+### 6.2 Error Response Contract (MUST)
+All error responses MUST be JSON and MUST follow this schema:
+
+```ts
+export type ErrorCode =
+  | "BAD_REQUEST"
+  | "TOPIC_OUT_OF_RANGE"
+  | "ENV_MISSING"
+  | "PROVIDER_ERROR"
+  | "MODEL_OUTPUT_INVALID"
+  | "INTERNAL_ERROR";
+
+export interface ErrorResponse {
+  code: ErrorCode;
+  message: string;       // user-friendly
+  retryable: boolean;    // whether UI should show Retry
+  request_id?: string;   // if available
+  details?: unknown;     // optional dev-only; avoid leaking secrets
+}
+````
+
+### 6.3 Request Validation Rules (MUST)
+
+* `topic`:
+
+  * trim whitespace
+  * length must be **2–120** chars after trim
+* `language` must be `"zh"` or `"en"`
+* If invalid → return `400` with `ErrorResponse { code: "BAD_REQUEST" | "TOPIC_OUT_OF_RANGE" }`
+
+### 6.4 Response Assembly Rules (MUST)
+
+The backend MUST:
+
+1. Call model and obtain **LLM-generated payload** (see Section 7).
+2. Validate payload strictly with runtime schema (unknown keys rejected).
+3. If valid, wrap into `InsightResponse` by adding:
+
+   * `request_id` (uuid)
+   * `provider` (name + model)
+   * `created_at` (ISO timestamp)
+
+---
+
+## 7) LLM Integration & Output Contract (Aliyun Bailian) — MUST
+
+### 7.1 Environment Variables (MUST)
+
+* `BAILIAN_API_KEY` (required)
+* `BAILIAN_MODEL` (required, e.g., `qwen-max` / `deepseek-v3`)
+* Optional:
+
+  * `BAILIAN_BASE_URL`
+  * `BAILIAN_TIMEOUT_MS`
+
+**Security rule:** API key MUST NOT be sent to the browser. The Bailian call MUST happen server-side only.
+
+### 7.2 What the Model Must Output (MUST)
+
+To reduce schema mismatch, the model should output **ONLY** the following JSON object (no markdown, no extra text):
+
+```ts
+export interface LLMGeneratedPayload {
+  scripts: VideoScript[]; // MUST be length=3
+  trends: TrendInsight;   // TOP-LEVEL only
+}
+```
+
+### 7.3 Strict JSON Rules (MUST)
+
+Model output MUST satisfy ALL:
+
+* Output is a **single JSON object** (no markdown, no backticks, no commentary).
+* `scripts` MUST be **exactly 3** items.
+* Each script MUST ONLY have these keys: `id, style, hook, narrative, cta`
+
+  * ❌ No `styles` (array)
+  * ❌ No script-level `trends`
+* `VideoScript.id` MUST be a valid UUID string:
+
+  * **hex digits 0-9 and a-f + hyphens**
+  * (RFC4122-like format; must pass runtime `.uuid()` validation)
+* `VideoScript.style` MUST be a **string enum** (`ScriptStyle`) (NOT an array).
+* `trends.hashtags`:
+
+  * length **5–10**
+  * each item should start with `#`
+  * recommended unique, no duplicates
+* `trends.bgm_suggestion` non-empty, recommended 1–2 lines.
+* Output language:
+
+  * If `language="zh"`: scripts & trends should be Chinese.
+  * If `language="en"`: scripts & trends should be English.
+
+### 7.4 One-Retry “Format-Fix” Rule (MUST)
+
+Backend MUST implement:
+
+1. First model call → parse/validate.
+2. If invalid JSON/schema → do **exactly one** format-fix retry:
+
+   * Provide the invalid output back to the model
+   * Ask it to return a corrected JSON **that strictly matches `LLMGeneratedPayload`**
+3. If still invalid after retry → return `502` with:
+
+   * `ErrorResponse { code: "MODEL_OUTPUT_INVALID", retryable: true }`
+
+### 7.5 Prompt Template Requirements (MUST)
+
+Prompt MUST explicitly state:
+
+* “JSON only, no markdown”
+* “scripts only contain id/style/hook/narrative/cta”
+* “no styles / no script-level trends”
+* “UUID must be hex digits”
+* “exactly 3 scripts”
+* “hashtags 5–10 and start with #”
+
+---
+
+## 8) UI Component Hierarchy & States (Presentation Layer) — MUST
+
+> Goal: Card-based layout for scan-ability (Trend Card + 3 Script Cards), with Loading/Error/Retry/Copy.
+
+### 8.1 Page-Level Hierarchy (Suggested)
+
+* `Page`
+
+  * `Header` (title + one-line pitch)
+  * `TopicForm`
+
+    * Topic input
+    * Language selector (zh/en)
+    * Generate button
+  * `StatusRegion`
+
+    * Loading (spinner/skeleton)
+    * ErrorBanner + Retry
+  * `ResultsRegion` (render only on success)
+
+    * `TrendCard`
+
+      * hashtags list
+      * bgm_suggestion text
+      * Copy Hashtags button
+    * `ScriptCard` x3
+
+      * style badge
+      * hook
+      * narrative bullets
+      * cta
+      * Copy Script button
+  * `ToastProvider` (copy success/fail)
+
+### 8.2 UI States (MUST)
+
+* `idle`: form visible, no result yet
+* `loading`: disable Generate; show loading indicator
+* `success`: show TrendCard + 3 ScriptCards
+* `error`: show friendly error + Retry (re-submit same topic/language)
+
+### 8.3 Copy Behavior (MUST)
+
+* Copy Script: includes `hook + narrative + cta` in a clean text format
+* Copy Hashtags: one line space-separated or newline-separated hashtags
+* On failure: show fallback instruction (“Please select and copy manually”)
+
+---
+
+## 9) End-to-End Validation Checklist (QA) — MUST
+
+* Input validation:
+
+  * empty topic → blocked
+  * length <2 or >120 → friendly error
+* Generation:
+
+  * returns exactly 3 scripts
+  * each script has hook/narrative/cta non-empty
+  * narrative displayed as bullets
+* Trends:
+
+  * 5–10 hashtags, visible on TrendCard
+  * bgm_suggestion non-empty
+* UX:
+
+  * loading state disables button
+  * error banner is friendly (no stack trace)
+  * Retry works
+  * copy buttons work + toast feedback
+* Robustness:
+
+  * if model returns invalid JSON → backend does exactly one format-fix retry
+  * if still invalid → `MODEL_OUTPUT_INVALID` (502) + UI shows Retry
+
+---

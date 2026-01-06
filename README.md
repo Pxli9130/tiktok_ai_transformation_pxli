@@ -4,13 +4,13 @@
 
 ## 总索引（Deliverables）
 
-- 交付物 A（Spec）：`spec.md`
+- 交付物 A（Spec）：[`spec.md`](spec.md)
 - 交付物 B（Source Code）：核心入口如下
-  - UI 入口：`app/page.tsx`
-  - API 入口：`app/api/generate/route.ts`（服务端调用 Aliyun Bailian）
-  - Schema 校验：`lib/schema.ts`
-  - LLM 调用封装：`lib/bailian.ts`、`lib/llm.ts`
-- 交付物 C（Process Documentation）：`process.md`
+  - UI 入口：[`app/page.tsx`](app/page.tsx)
+  - API 入口：[`app/api/generate/route.ts`](app/api/generate/route.ts)（服务端调用 Aliyun Bailian）
+  - Schema 校验：[`lib/schema.ts`](lib/schema.ts)
+  - LLM 调用封装：[`lib/bailian.ts`](lib/bailian.ts)、[`lib/llm.ts`](lib/llm.ts)
+- 交付物 C（Process Documentation）：[`process.md`](process.md)
 - 交付物 D（Proof of Work）：`proof/`（截图）
 
 ## 项目简介
@@ -99,7 +99,7 @@ BAILIAN_TIMEOUT_MS=20000
 
 ## 如何验收
 
-对照 `spec.md` 的关键验收点：
+对照 [`spec.md`](spec.md) 的关键验收点：
 - 输入支持 zh/en，长度限制 2–120 字符（空白输入提示）
 - 点击 Generate 后返回 3 个 Script Cards + 1 个 Trend Card
 - 生成过程中有 Loading 状态，按钮禁用
