@@ -142,12 +142,18 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <a
-                href="#results"
-                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700"
-              >
-                Jump to results <ArrowUpRight className="h-3 w-3" />
-              </a>
+              {data ? (
+                <a
+                  href="#results"
+                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700"
+                >
+                  Jump to results <ArrowUpRight className="h-3 w-3" />
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                  Jump to results <ArrowUpRight className="h-3 w-3" />
+                </span>
+              )}
             </div>
           </div>
         </header>

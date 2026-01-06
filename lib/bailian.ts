@@ -33,23 +33,37 @@ function getConfig(): BailianConfig {
   return { apiKey, baseUrl, model, timeoutMs };
 }
 
-export async function callBailian(messages: BailianMessage[]) {
+export interface BailianRequestOptions {
+  temperature?: number;
+  responseFormat?: "json_object";
+}
+
+export async function callBailian(
+  messages: BailianMessage[],
+  options: BailianRequestOptions = {}
+) {
   const config = getConfig();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
   try {
+    const body: Record<string, unknown> = {
+      model: config.model,
+      messages,
+      temperature: options.temperature ?? 0.7
+    };
+
+    if (options.responseFormat) {
+      body.response_format = { type: options.responseFormat };
+    }
+
     const response = await fetch(`${config.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`
       },
-      body: JSON.stringify({
-        model: config.model,
-        messages,
-        temperature: 0.7
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal
     });
 

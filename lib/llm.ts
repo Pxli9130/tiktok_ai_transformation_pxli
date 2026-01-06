@@ -25,6 +25,20 @@ function parseModelJson(content: string) {
   }
 }
 
+function logModelFailure(params: {
+  reason: string;
+  content: string;
+  formatFix?: boolean;
+  details?: string;
+}) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+  const prefix = params.formatFix ? "[llm][format-fix]" : "[llm]";
+  const details = params.details ? `\nDetails: ${params.details}` : "";
+  console.warn(`${prefix} Invalid model output (${params.reason}).${details}\n${params.content}`);
+}
+
 async function attemptGenerate(params: {
   topic: string;
   language: Lang;
@@ -55,18 +69,35 @@ async function attemptGenerate(params: {
       })
     : buildUserPrompt({ topic: params.topic, language: params.language });
 
-  const { content } = await callBailian([
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userPrompt }
-  ]);
+  const { content } = await callBailian(
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ],
+    {
+      temperature: params.formatFix ? 0.1 : 0.2,
+      responseFormat: "json_object"
+    }
+  );
 
   const parsed = parseModelJson(content);
   if (!parsed.ok) {
+    logModelFailure({
+      reason: "invalid JSON",
+      content,
+      formatFix: params.formatFix
+    });
     return { raw: content };
   }
 
   const validated = insightResponseSchema.safeParse(parsed.value);
   if (!validated.success) {
+    logModelFailure({
+      reason: "schema mismatch",
+      content,
+      formatFix: params.formatFix,
+      details: validated.error.issues.map((issue) => issue.message).join("; ")
+    });
     return { raw: content };
   }
 
