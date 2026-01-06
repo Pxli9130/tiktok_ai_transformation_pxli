@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --card-border: rgba(15, 23, 42, 0.08);
+  --card-bg: rgba(255, 255, 255, 0.85);
+}
+
+body {
+  @apply bg-mist text-ink antialiased;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at top, rgba(249, 115, 22, 0.15), transparent 55%),
+    radial-gradient(circle at 80% 10%, rgba(14, 165, 233, 0.14), transparent 45%),
+    radial-gradient(circle at 10% 70%, rgba(16, 185, 129, 0.1), transparent 55%);
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+.card-surface {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(14px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
