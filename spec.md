@@ -1,126 +1,133 @@
-# spec.md — TikTok Creator Insight Assistant (MVP)
+# TikTok Creator Insight Assistant — MVP (spec.md)
+
+> MVP: Turn a vague creator topic into **three structured short-video scripts** + **trend signals** (hashtags + BGM direction) with a card-based UI, reducing Time-to-Publish.
+
+---
 
 ## 0) Spec-Driven Development Contract (MUST)
-This project must be implemented using **Spec-Driven Development**:
+
+This project must follow **Spec-Driven Development**:
 1) Write/iterate this `spec.md` (or `.kiro`) first.
-2) Use AI-native tooling (Cursor / Claude Code / Windsurf) to generate code **from this spec**.
-3) If AI-generated code is wrong, **fix the spec**, then regenerate/refactor accordingly.
-4) Final submission will be evaluated on both **running result** and **spec quality**.
+2) Use AI-native tooling (Cursor / Claude Code / Windsurf / VS Code AI coding assistant) to generate code **from this spec**.
+3) If AI-generated code is wrong, **fix the spec first**, then regenerate/refactor accordingly.
+4) Final submission is graded on both **running result** and **spec quality** (auditability, correctness, completeness).
 
 ---
 
-## 1) Product Background
+## 1) Product Background（产品背景）
 
-### 1.1 Pain Points
+### 1.1 Pain Points（业务痛点）
 In short-video ecosystems, creators often face:
-- **Idea drought** (“创意枯竭”)
-- **Trend mismatch** (“趋势脱节”)
+- **Idea drought**（创意枯竭）
+- **Trend mismatch**（趋势脱节）
 
-Traditional topic selection relies on manual trend collection, which is time-consuming and unstructured, leading to a long **Time-to-Publish** cycle.
+Manual trend searching is time-consuming and unstructured → long **Time-to-Publish**.
 
-### 1.2 Value Proposition
-Build an MVP “**TikTok Creator Insight Assistant**” that uses generative AI to convert vague creative intent into:
-- **Structured script outlines (3 distinct styles)**
-- **Trend-like suggestions (hashtags + background music vibe)**
+### 1.2 Value Proposition（价值主张）
+Build an MVP that uses GenAI to convert vague intent into:
+- **Structured scripts (3 distinct styles)**
+- **Trend-like signals (hashtags + music vibe)**
 
-Goal: enable **Data-Driven Creativity** and improve content production efficiency.
-
----
-
-## 2) Scope, Goals, Non-Goals
-
-### 2.1 MVP Goals (MUST)
-1) Accept a vague topic/niche as input, supporting **Chinese/English**.
-2) Generate:
-   - **3** distinct short-video script structures, each containing:
-     - Hook / 黄金3秒
-     - Core Narrative
-     - Call to Action (CTA)
-   - **5–10 hashtags**
-   - **Background music style/vibe** (1–2 lines)
-3) Present results in **structured Cards** (not a long text blob).
-4) Provide **Loading**, **Error Handling**, and **One-click Copy**.
-5) LLM provider must be **Aliyun Bailian**, API key stored in **.env** (no hardcoding).
-
-### 2.2 Non-Goals (Out of MVP)
-- No real-time scraping of TikTok trends (LLM-suggested trends only)
-- No login, personalization, storage of user history
-- No publish-to-TikTok integration
+Goal: enable **Data-Driven Creativity** and improve production efficiency.
 
 ---
 
-## 3) Technical Stack Constraints (Implementation Target)
+## 2) Scope
 
-- Framework: **Next.js 14+ (App Router)**
-- Language: **TypeScript**
-- Styling: **Tailwind CSS**
-- Icons: **lucide-react**
-- UI Components: **shadcn/ui optional**
-- Deployment: **Vercel** or local Node
-- LLM Provider: **Aliyun Bailian**
-  - Suggested models: `deepseek-v3`, `deepseek-r1`, `qwen-max`
+### 2.1 In Scope (MUST)
+- Input: topic/niche, multilingual input supported (zh/en)
+- Output:
+  - **3 scripts** (Hook / Narrative / CTA)
+  - **5–10 hashtags**
+  - **BGM suggestion** (style/vibe text)
+- Presentation:
+  - Card layout (not a wall of text)
+  - Loading + Error handling + Retry
+  - One-click copy (script + hashtags)
+- Provider constraints:
+  - LLM must be **Aliyun Bailian**
+  - API key via **.env** only (no hardcoding)
+
+### 2.2 Out of Scope (NOT in MVP)
+- Real TikTok trend scraping
+- Accounts/history/persistence
+- Publish-to-TikTok integration
 
 ---
 
-## 4) User Stories & Acceptance Criteria
+## 3) Technical Constraints（开发约束）
 
-### US-1 Input & Intent (Input Layer)
-**As a** creator, **I want to** input a topic (zh/en), **so that** I can get ideas relevant to my niche.
-- AC-1.1: Input supports Chinese and English text (no encoding issues).
-- AC-1.2: Empty/whitespace-only topic is blocked with inline validation.
-- AC-1.3: Topic length is limited (default 2–120 chars); show friendly message if exceeded.
+### 3.1 Frontend / Platform
+- Next.js **14+** (App Router)
+- TypeScript
+- Tailwind CSS
+- lucide-react icons
+- shadcn/ui optional
 
-### US-2 Generate Insights (Processing Layer)
-**As a** creator, **I want to** click "Generate" and receive 3 scripts + trends.
-- AC-2.1: On success, response contains **exactly 3 scripts**.
-- AC-2.2: Each script contains non-empty `hook`, `narrative`, `cta`.
-- AC-2.3: Response contains `hashtags` list length **between 5 and 10**.
-- AC-2.4: Response contains non-empty `bgm_suggestion` (1–2 lines recommended).
-- AC-2.5: 3 scripts must be meaningfully different in style/angle (not minor rewording).
+### 3.2 Model Provider (MUST)
+- Aliyun Bailian (百炼)
+- Suggested models: DeepSeek-V3 / DeepSeek-R1 / Qwen-Max
+- Key handling:
+  - `.env.local` only (never commit)
+  - provide `.env.example`
 
-### US-3 Structured Visualization (Presentation Layer)
-**As a** creator, **I want to** scan results in card layout.
-- AC-3.1: Render **3 Script Cards** (one per script).
-- AC-3.2: Render **1 Trend Card/Panel** for hashtags + bgm.
-- AC-3.3: No “wall of text”: narrative is displayed as bullets or clearly separated beats.
+---
 
-### US-4 Operational Utility (Copy)
-**As a** creator, **I want to** copy scripts/hashtags with one click.
-- AC-4.1: Each Script Card has “Copy Script”.
-- AC-4.2: Trend Card has “Copy Hashtags”.
-- AC-4.3: Show success feedback (toast/snackbar).
-- AC-4.4: If Clipboard API fails, show fallback instruction.
+## 4) User Stories & Acceptance Criteria（验收标准）
 
-### US-5 Loading & Error Handling
-**As a** creator, **I want to** see progress and recover from errors.
-- AC-5.1: While generating, disable button and show Loading (spinner or skeleton).
-- AC-5.2: On error, show a friendly message + “Retry”.
-- AC-5.3: If model output is invalid JSON/schema, backend performs **one automatic format-fix retry**.
-- AC-5.4: If still invalid, return a structured error code `MODEL_OUTPUT_INVALID`.
+### US-1 Input & Language
+**As a** creator, **I want** to input a topic and select language (zh/en), **so that** I get niche-relevant ideas.
+
+- **AC-1.1** Topic accepts Chinese/English characters (no encoding issues).
+- **AC-1.2** Empty/whitespace topic is blocked with inline validation.
+- **AC-1.3** Topic length must be 2–120 characters; show friendly message if out of range.
+- **AC-1.4** Language selector supports English/中文 → API uses `"en"` / `"zh"`.
+
+### US-2 Insight Generation
+**As a** creator, **I want** to click Generate and receive 3 scripts + trend signals.
+
+- **AC-2.1** Success response contains **exactly 3 scripts**.
+- **AC-2.2** Each script contains non-empty `hook`, `narrative`, `cta`.
+- **AC-2.3** `narrative` is an array of beats (recommended 3–7 items).
+- **AC-2.4** `trends.hashtags` length is **5–10**.
+- **AC-2.5** `trends.bgm_suggestion` is non-empty (1–2 lines recommended).
+- **AC-2.6** The three scripts must be meaningfully different (angle/style), not minor rewordings.
+
+### US-3 Structured Presentation
+**As a** creator, **I want** a card layout so I can scan quickly.
+
+- **AC-3.1** UI renders one **Trend Card** (hashtags + BGM direction).
+- **AC-3.2** UI renders **3 Script Cards** (one per script).
+- **AC-3.3** UI avoids a single “wall of text”.
+
+### US-4 One-Click Copy
+**As a** creator, **I want** one-click copy so I can paste immediately.
+
+- **AC-4.1** Each Script Card has “Copy Script”.
+- **AC-4.2** Trend Card has “Copy Hashtags”.
+- **AC-4.3** Show toast/snackbar on copy success/failure.
+- **AC-4.4** If Clipboard API fails, show fallback message/instruction.
+
+### US-5 Loading / Error / Retry
+**As a** creator, **I want** clear progress + recoverable errors.
+
+- **AC-5.1** While generating: show loading indicator + disable Generate button.
+- **AC-5.2** On error: show user-friendly message (not raw stack).
+- **AC-5.3** Error state includes a **Retry** action that re-submits the same request.
+- **AC-5.4** Backend handles invalid model output with **exactly one format-fix retry** (see Section 7.3).
 
 ---
 
 ## 5) Data Models (Schema) — MUST be enforced
 
-### 5.1 Request/Response Contracts (TypeScript)
-The backend must validate LLM output against a runtime schema (e.g., zod) and only return valid `InsightResponse`.
+> Server must validate model output with runtime schema (e.g., zod). Unknown fields must be rejected (strict parsing).
 
 ```ts
 export type Lang = "zh" | "en";
 
 export interface GenerateRequest {
   topic: string;
-  language: Lang; // desired output language
-}
-
-export interface InsightResponse {
-  request_id: string;     // uuid
-  topic: string;
   language: Lang;
-  scripts: VideoScript[]; // MUST be length=3
-  trends: TrendInsight;   // MUST exist
-  provider: { name: "aliyun-bailian"; model: string };
-  created_at: string;     // ISO timestamp
 }
 
 export type ScriptStyle =
@@ -131,14 +138,24 @@ export type ScriptStyle =
   | "Other";
 
 export interface VideoScript {
-  id: string;            // uuid
-  style: ScriptStyle;
-  hook: string;          // 黄金3秒
-  narrative: string[];   // 3–7 bullet beats recommended
-  cta: string;           // Call to Action
+  id: string;           // UUID (RFC4122-like, hex digits + hyphens)
+  style: ScriptStyle;   // string ONLY (NOT array)
+  hook: string;
+  narrative: string[];  // bullet beats
+  cta: string;
 }
 
 export interface TrendInsight {
-  hashtags: string[];      // MUST be length 5–10
-  bgm_suggestion: string;  // MUST be non-empty (1–2 lines recommended)
+  hashtags: string[];      // 5–10
+  bgm_suggestion: string;  // non-empty
+}
+
+export interface InsightResponse {
+  request_id: string; // uuid
+  topic: string;
+  language: Lang;
+  scripts: VideoScript[]; // MUST be length=3
+  trends: TrendInsight;   // MUST exist (TOP-LEVEL only)
+  provider: { name: "aliyun-bailian"; model: string };
+  created_at: string; // ISO timestamp
 }

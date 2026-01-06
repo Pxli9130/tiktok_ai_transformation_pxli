@@ -33,7 +33,9 @@ Follow these rules strictly:
 - Output must be a single JSON object, no markdown, no extra text.
 - Output language must be ${params.language}.
 - Provide exactly 3 scripts, each with hook, narrative array, and cta.
-- Each script must have a unique uuid for id.
+- Each script must have a unique uuid for id (hex digits 0-9 and a-f with hyphens).
+- Each script may ONLY include these keys: id, style, hook, narrative, cta.
+- Do NOT include "styles" or "trends" inside any script.
 - styles must be one of: Educational, Entertaining, Emotional, Vlog, Other.
 - trends.hashtags must contain 5-10 items and each must start with #.
 - trends.bgm_suggestion must be non-empty (1-2 lines recommended).
@@ -76,6 +78,9 @@ created_at: ${params.createdAt}
 Rules:
 - JSON only, no markdown, no extra text.
 - 3 scripts exactly, each with hook, narrative array, cta.
+- Each script may ONLY include these keys: id, style, hook, narrative, cta.
+- Do NOT include "styles" or "trends" inside any script.
+- Each script id must be a uuid (hex digits 0-9 and a-f with hyphens).
 - hashtags length 5-10, each begins with #.
 - Output language must be ${params.language}.
 
